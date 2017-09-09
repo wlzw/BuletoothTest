@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?><!--用于切换的碎片, 保存的设备-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/再循环表_保存的设备"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <Button
+        android:id="@+id/btn_扫描"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="开始扫描" />
+
+</LinearLayout>

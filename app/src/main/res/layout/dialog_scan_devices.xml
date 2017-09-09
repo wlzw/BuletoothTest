@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v7.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/卡片_扫描新设备"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_margin="1dp"
+    app:cardCornerRadius="4dp"
+    app:cardElevation="16dp">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/colorPrimary"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="8dp"
+                android:layout_marginRight="8dp"
+                android:layout_weight="1"
+                android:padding="8dp"
+                android:text="扫描新设备"
+                android:textColor="@android:color/holo_blue_bright"
+                android:textSize="16sp" />
+
+            <ProgressBar
+                android:id="@+id/圆形进度条_扫描中"
+                style="@style/AlertDialog.AppCompat.Light"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:padding="8dp" />
+
+        </LinearLayout>
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/再循环列表_新设备"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp" />
+
+        <!--<view
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            tools:background="@color/colorPrimary" />-->
+
+        <Button
+            android:id="@+id/btn_停止扫描"
+            android:layout_width="match_parent"
+            android:layout_height="33dp"
+            android:layout_marginTop="3dp"
+            android:background="@android:color/transparent"
+            android:text="停止扫描" />
+    </LinearLayout>
+
+</android.support.v7.widget.CardView>

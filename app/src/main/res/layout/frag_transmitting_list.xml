@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?><!--用于切换的碎片,通信中的的设备-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/再循环表_通信中的设备"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginLeft="1.5dp"
+            android:layout_marginRight="1.5dp"
+            android:background="#667788" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="3dp">
+
+            <CheckBox
+                android:id="@+id/复选框_Hex切换"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Hex" />
+
+            <Space
+                android:layout_width="10dp"
+                android:layout_height="match_parent" />
+
+            <CheckBox
+                android:id="@+id/复选框_CRC校验"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="CRC" />
+
+            <Space
+                android:layout_width="10dp"
+                android:layout_height="match_parent" />
+
+            <CheckBox
+                android:id="@+id/复选框_CRLF结束符"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="CRLF" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="3dp">
+
+
+            <EditText
+                android:id="@+id/输入框_发送数据"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:gravity="center_horizontal"
+                android:hint="发送指令"
+                android:inputType="textMultiLine"
+                android:maxLines="2" />
+
+            <Button
+                android:id="@+id/btn_通信页_发送"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:text="发送" />
+
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

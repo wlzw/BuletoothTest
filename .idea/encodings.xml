@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Encoding">
+    <file url="file://$PROJECT_DIR$/app/build.gradle" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/app/src/androidTest/java/com/suhe/buletoothtest/ExampleInstrumentedTest.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/app/src/main/java/com/suhe/buletoothtest/Activities/CommFragment.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/app/src/main/java/com/suhe/buletoothtest/Activities/DeviceFragment.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/app/src/main/java/com/suhe/buletoothtest/Activities/MainActivity.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/app/src/main/java/com/suhe/buletoothtest/Activities/ScanDialogActivity.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/app/src/main/java/com/suhe/buletoothtest/Adapters/DeviceRecycAdapter.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/app/src/main/java/com/suhe/buletoothtest/mAPI/BtManager.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/app/src/test/java/com/suhe/buletoothtest/ExampleUnitTest.java" charset="UTF-8" />
+    <file url="PROJECT" charset="UTF-8" />
+  </component>
+</project>

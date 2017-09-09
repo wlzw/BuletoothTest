@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v7.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/卡片_通信页_循环表子项"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    android:padding="3dp"
+    app:cardCornerRadius="4dp"
+    app:cardElevation="3dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:orientation="vertical">
+
+        <!--名称加时间,注意重心方向与顺序-->
+        <TextView
+            android:id="@+id/文本_收发指令小标题"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="left"
+            android:layout_marginBottom="5dp"
+            android:hint="2016.12.23 12-12-12"
+            android:textColor="#afafaf"
+            android:textSize="12sp" />
+
+        <!--数据内容,注意重心方向-->
+        <TextView
+            android:id="@+id/文本_收发指令内容"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_gravity="left"
+            android:layout_weight="1"
+            android:gravity="right"
+            android:hint="发送的指令"
+            android:textSize="15sp" />
+    </LinearLayout>
+
+</android.support.v7.widget.CardView>
+
+
