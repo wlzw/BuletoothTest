@@ -697,6 +697,7 @@ public class BtManager {
                 这个接口.on连接状态改变(目标设备MAC地址, 当前状态);
             }
         }
+
     }
 
     /*
