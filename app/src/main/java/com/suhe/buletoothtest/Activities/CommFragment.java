@@ -52,12 +52,15 @@ public class CommFragment extends Fragment implements View.OnClickListener, Comp
     /*标志 是否刚刚切换到 Hex 样式,在输入监视器里触发一次全过滤*/
     private static boolean 标志_是否刚刚切换到Hex样式;
 
+    private View 碎片视图;
     private CheckBox 复选框_Hex指令样式;
     private CheckBox 复选框_CRC校验;
     private CheckBox 复选框_CRLF结束符;
     private Button btn_发送按钮;
+    private Button btn_清空记录按钮;
     private EditText 输入框_发送的指令;
 
+    int size;
     /*
     * 用 监视器 实时监视输入文本并根据输入选项处理内容
     * */
@@ -115,33 +118,43 @@ public class CommFragment extends Fragment implements View.OnClickListener, Comp
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        /*
+        * 如果碎片视图空, 说明需要初始化
+        * */
+        if (碎片视图 == null) {
 //        返回设备裂变的 fragment 布局填充的 view
-        View 视图 = inflater.inflate(R.layout.frag_transmitting_list, container, false);
+            碎片视图 = inflater.inflate(R.layout.frag_transmitting_list, container, false);
 
+            复选框_Hex指令样式 = (CheckBox) 碎片视图.findViewById(R.id.复选框_Hex切换);
+            复选框_Hex指令样式.setChecked(true);
+            复选框_Hex指令样式.setOnCheckedChangeListener(this);
+            当前指令样式 = ItemContentOfCommList.显示样式.十六进制;
 
-        复选框_Hex指令样式 = (CheckBox) 视图.findViewById(R.id.复选框_Hex切换);
-        复选框_Hex指令样式.setChecked(true);
-        复选框_Hex指令样式.setOnCheckedChangeListener(this);
-        当前指令样式 = ItemContentOfCommList.显示样式.十六进制;
+            复选框_CRC校验 = (CheckBox) 碎片视图.findViewById(R.id.复选框_CRC校验);
+            复选框_CRC校验.setChecked(true);
+            复选框_CRC校验.setOnCheckedChangeListener(this);
+            是否启用CRC校验 = true;
 
-        复选框_CRC校验 = (CheckBox) 视图.findViewById(R.id.复选框_CRC校验);
-        复选框_CRC校验.setChecked(true);
-        复选框_CRC校验.setOnCheckedChangeListener(this);
-        是否启用CRC校验 = true;
+            复选框_CRLF结束符 = (CheckBox) 碎片视图.findViewById(R.id.复选框_CRLF结束符);
 
-        复选框_CRLF结束符 = (CheckBox) 视图.findViewById(R.id.复选框_CRLF结束符);
+            btn_发送按钮 = (Button) 碎片视图.findViewById(R.id.btn_通信页_发送);
+            btn_发送按钮.setOnClickListener(this);
 
+            btn_清空记录按钮 = (Button) 碎片视图.findViewById(R.id.btn_通信页_清空记录);
+            btn_清空记录按钮.setOnClickListener(this);
 
-        btn_发送按钮 = (Button) 视图.findViewById(R.id.btn_通信页_发送);
-        btn_发送按钮.setOnClickListener(this);
+            输入框_发送的指令 = (EditText) 碎片视图.findViewById(R.id.输入框_发送数据);
+            输入框_发送的指令.addTextChangedListener(文本监视器_指令输入框);
+            输入框_发送的指令.setSelection(输入框_发送的指令.length());/*光标移至末尾*/
 
-        输入框_发送的指令 = (EditText) 视图.findViewById(R.id.输入框_发送数据);
-        输入框_发送的指令.addTextChangedListener(文本监视器_指令输入框);
-        输入框_发送的指令.setSelection(输入框_发送的指令.length());/*光标移至末尾*/
+            循环表_通信列表 = (RecyclerView) 碎片视图.findViewById(R.id.再循环表_通信中的设备);
+            LinearLayoutManager 循环表布局管理器 = new LinearLayoutManager(this.getContext());
+            循环表_通信列表.setLayoutManager(循环表布局管理器);
 
-        循环表_通信列表 = (RecyclerView) 视图.findViewById(R.id.再循环表_通信中的设备);
-        LinearLayoutManager 循环表布局管理器 = new LinearLayoutManager(this.getContext());
-        循环表_通信列表.setLayoutManager(循环表布局管理器);
+        }
+
+        /*
+        * 注意!: 当数据源改变后必须要创建新的适配器*/
         循环表适配器 = new CommRecycAdapter(当前设备通信记录);
         循环表适配器.setOn长按循环表子项(new CommRecycAdapter.接口$长按事件$通信页循环表子项() {
             @Override
@@ -150,27 +163,27 @@ public class CommFragment extends Fragment implements View.OnClickListener, Comp
             }
         });
         循环表_通信列表.setAdapter(循环表适配器);
-
-        return 视图;
+        return 碎片视图;
     }
 
 
     /*
     * 设置当前通信数据列表数据
-    * 然后更新循环表
+  * 然后更新循环表
     * */
     public void 设置数据源(String 当前设备MAC地址, List<ItemContentOfCommList> 通信记录) {
-        this.当前设备MAC地址 = 当前设备MAC地址;
-        this.当前设备通信记录 = 通信记录;
+        CommFragment.当前设备MAC地址 = 当前设备MAC地址;
+        当前设备通信记录 = 通信记录;
         刷新通信数据表();
     }
 
     /*
-    * 刷新通信数据表,并进行错误处理
+    * 刷新通信数据表, 滑到底端, 并进行错误处理
     * */
     public void 刷新通信数据表() {
         try {
             循环表适配器.notifyDataSetChanged();
+            循环表_通信列表.smoothScrollToPosition(循环表适配器.getItemCount() - 1);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -210,7 +223,10 @@ public class CommFragment extends Fragment implements View.OnClickListener, Comp
                     /*
                     * 如果通信单元 null,就不考虑下面的发送了*/
                     if (当前通信单元 == null) {
-                        return;
+                        /*
+                        * 不是有效的通信单元, 弹窗提示
+                        * */
+                        Toast.makeText(getContext(), "此设备未连接", Toast.LENGTH_SHORT).show();
                     }
                     /*
                     * 通信单元可用,下面处理并发送
@@ -282,6 +298,13 @@ public class CommFragment extends Fragment implements View.OnClickListener, Comp
                 else {
                     Toast.makeText(getContext(), "不能为空", Toast.LENGTH_SHORT).show();
                 }
+                break;
+            /*
+            * 点击清空列表按钮, 清空通信记录列表, 并刷新显示
+            * */
+            case R.id.btn_通信页_清空记录:
+                当前设备通信记录.clear();
+                循环表适配器.notifyDataSetChanged();
         }
     }
 
@@ -327,7 +350,7 @@ public class CommFragment extends Fragment implements View.OnClickListener, Comp
         private WeakReference<CommFragment> 弱引用_CommFragment;
 
         public 类$信鸽(CommFragment 通信页碎片) {
-            this.弱引用_CommFragment = new WeakReference<CommFragment>(通信页碎片);
+            this.弱引用_CommFragment = new WeakReference<>(通信页碎片);
         }
 
         @Override
@@ -339,11 +362,12 @@ public class CommFragment extends Fragment implements View.OnClickListener, Comp
                 /*
                 * 执行了收发数据,更新到列表上
                 * */
+                ;
                 if (msg.what == BtManager.枚举$接棒消息.通信单元读写流.hashCode()) {
                     /*
                     * 判断是否与当前通信的设备相同,相同则更新列表数据
                     * */
-                    if (((String) (msg.obj)).equals(当前设备MAC地址)) {
+                    if (((msg.obj)).equals(当前设备MAC地址)) {
                         /*
                         * 判断发送模式
                         * */
@@ -352,6 +376,7 @@ public class CommFragment extends Fragment implements View.OnClickListener, Comp
                             * 0:发送模式
                             * */
                             case 0:
+                                /*发送数据的长度直接与内容匹配,可以直接传入*/
                                 当前设备通信记录.add(new ItemContentOfCommList(true, new Date(), msg.getData().getByteArray(BtManager.KEY_流数据), 当前指令样式));
                                 通信碎片引用.清空输入框();
                                 break;
@@ -359,7 +384,16 @@ public class CommFragment extends Fragment implements View.OnClickListener, Comp
                             * 1:接收模式
                             * */
                             case 1:
-                                当前设备通信记录.add(new ItemContentOfCommList(false, new Date(), msg.getData().getByteArray(BtManager.KEY_流数据), 当前指令样式));
+                                /*接收缓冲区需经过实读字节数剪切出来, 才是合适的数据内容*/
+                                byte[] 有效数据 = new byte[msg.arg2];
+                                byte[] 缓冲区数据 = msg.getData().getByteArray(BtManager.KEY_流数据);
+                                /*确保 缓冲区数据 not null */
+                                if (缓冲区数据 != null) {
+                                    /*复制数组有效部分*/
+                                    System.arraycopy(缓冲区数据, 0, 有效数据, 0, msg.arg2);
+                                    /*添加到通信记录*/
+                                    当前设备通信记录.add(new ItemContentOfCommList(false, new Date(), 有效数据, 当前指令样式));
+                                }
                                 break;
                         }
                         /*数据修改之后,更新循环表*/

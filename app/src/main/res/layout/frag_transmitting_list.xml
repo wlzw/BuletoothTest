@@ -4,12 +4,14 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
+    <!--通信记录循环表-->
     <android.support.v7.widget.RecyclerView
         android:id="@+id/再循环表_通信中的设备"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1" />
 
+    <!--输入控制区-->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -17,62 +19,84 @@
 
         <View
             android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_marginLeft="1.5dp"
-            android:layout_marginRight="1.5dp"
+            android:layout_height="3dp"
             android:background="#667788" />
 
+        <!--数据修饰区-->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:padding="3dp">
 
+            <!--HEX切换-->
             <CheckBox
                 android:id="@+id/复选框_Hex切换"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:text="Hex" />
 
             <Space
                 android:layout_width="10dp"
                 android:layout_height="match_parent" />
 
+            <!--CRC切换-->
             <CheckBox
                 android:id="@+id/复选框_CRC校验"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:text="CRC" />
 
             <Space
                 android:layout_width="10dp"
                 android:layout_height="match_parent" />
 
+            <!--CRLF切换-->
             <CheckBox
                 android:id="@+id/复选框_CRLF结束符"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:text="CRLF" />
 
+            <Space
+                android:layout_width="10dp"
+                android:layout_height="match_parent" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="right">
+
+                <!--清空列表按钮-->
+                <Button
+                    android:id="@+id/btn_通信页_清空记录"
+                    android:layout_width="wrap_content"
+                    android:layout_height="33dp"
+                    android:text="清表"
+                    android:textSize="10dp" />
+            </LinearLayout>
         </LinearLayout>
 
+        <!--数据输入与发送 区-->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:padding="3dp">
 
-
+            <!--输入文本框-->
             <EditText
                 android:id="@+id/输入框_发送数据"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
+                android:layout_gravity="center_horizontal"
                 android:layout_weight="1"
-                android:gravity="center_horizontal"
                 android:hint="发送指令"
                 android:inputType="textMultiLine"
-                android:maxLines="2" />
+                android:maxLines="2"
+                android:padding="10dp" />
 
+            <!--发送按钮-->
             <Button
                 android:id="@+id/btn_通信页_发送"
                 android:layout_width="wrap_content"

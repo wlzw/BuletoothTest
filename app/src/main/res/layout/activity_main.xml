@@ -25,8 +25,8 @@
                 android:id="@+id/标题"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:layout_gravity="left|center_horizontal"
+                android:layout_weight="1"
                 android:gravity="left|center_horizontal"
                 android:textColor="#fff"
                 android:textSize="25sp" />
@@ -52,7 +52,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/colorPrimary"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:visibility="gone">
 
         <Button
             android:id="@+id/btn_设备页"

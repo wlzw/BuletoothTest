@@ -13,14 +13,15 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.v4.util.ArrayMap;
+import android.widget.Toast;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -36,50 +37,65 @@ import java.util.concurrent.Executors;
 
 public class BtManager {
 
+    private Context 上下文;
     /*
     * 读写流消息中的流数据键
     * */
     public static final String KEY_流数据 = "KEY_流数据";
 
     /*
+    * 设备连接状态消息的数据键
+    * */
+    public static final String KEY_设备 = "KEY_设备";
+
+    /*
     * 用 HashCode() 作为消息键值,
     * 保证方便且唯一
     * */
     public enum 枚举$接棒消息 {
-        /*
-        * 用于在 "蓝牙监听" 与 "主动发起连接" 后的结果消息,并在消息的 "obj" 中附上连接到的 BluetoothDevice
-        * 注意如果如果连接失败返回设备为 null
-        * */
+        /**
+         * 用于在 "蓝牙监听" 与 "主动发起连接" 时的结果消息,
+         * <p>消息的 "obj" 中附上连接到的 连接状态  {@link BtManager.枚举$设备连接状态}</p>
+         * <P>使用<code>Message.getData()</code> 方法, 并用{@link #KEY_设备}可以获取 Bundle 类型的 Parcelable 的 {@link BluetoothDevice} 设备</P>
+         */
         蓝牙连接结果,
-        /*
-        * 与蓝牙设备通信中的发送与接收数据流就会发送这个消息
-        * 消息的 arg1 0 表示发送了数据,1 表示接收了数据
-        * 消息的 arg2 为读到的字节数
-        * 消息的 obj 中附带 String MAC地址,发送数据时此处为 null
-        * 消息的 getData() 方法可以得到 byte[] 流数据
-        * */
+        /**
+         * <P>与蓝牙设备通信中的发送与接收数据流就会发送这个消息</P>
+         * <P>消息的 arg1 0 表示发送了数据,1 表示接收了数据</P>
+         * <P>消息的 arg2 为读到的字节数, 注意: 发送的数据的字节数等于内容长度, 接收数据内容需经过字节数裁剪</P>
+         * <P>消息的 obj 中附带 String MAC地址,发送数据时此处为 null</P>
+         * <P>消息的 getData() 方法可以得到 byte[] 流数据</P>
+         */
         通信单元读写流,
     }
 
-    /*
-    * 设备连接动作状态,
-    * 包括未连接, 连接中,已连接
-    * */
+    /**
+     * 设备连接动作状态, 分为 静态状态 与 动态状态, 两种状态不相同
+     * <P>例如, 当设备处于 <code>动作_连接中</code>" 时 , 它的静态状态是 <code>状态_未连接</code></P>
+     */
     public enum 枚举$设备连接状态 {
         /*
-        * 已断开,或未连接
+        * 刚刚断开
         * */
-        设备未连接,
+        动作_已断开,
         /*
         * 连接中
         * 当发起连接时是这个状态
         * */
-        设备连接中,
+        动作_连接中,
         /*
-        * 已连接
-        * 获取设备的 Socket 之后是这个状态
+        * 刚刚连接
         * */
-        设备已连接,
+        动作_已连接,
+        /*
+        * 设备处于连接
+        * */
+        状态_已连接,
+        /*
+        * 设备处于断开
+        * */
+        状态_未连接,
+
     }
 
 
@@ -125,8 +141,22 @@ public class BtManager {
     * → 注册广播
     * */
     public BtManager(Context 上下文) {
-        IntentFilter 广播意图 = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
-        上下文.registerReceiver(广播接收器, 广播意图);
+        this.上下文 = 上下文;
+
+        IntentFilter 广播意图_蓝牙开关 = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
+        IntentFilter 广播意图_远程设备断开 = new IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECTED);
+
+        上下文.registerReceiver(广播接收器, 广播意图_蓝牙开关);
+        上下文.registerReceiver(广播接收器, 广播意图_远程设备断开);
+
+        发起临时蓝牙监听(true);
+    }
+
+    /*
+    * 应用关闭时候释放资源的方法
+    * */
+    public static void 释放资源() {
+        /*TODO*/
     }
 
     /*
@@ -158,11 +188,29 @@ public class BtManager {
         return new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
     }
 
+    /*
+    * 获取已配对设备
+    * */
     public static List<BluetoothDevice> 获取已配对蓝牙设备集() {
         List<BluetoothDevice> 设备列表 = new ArrayList<>();
         Set<BluetoothDevice> 绑定的设备 = 蓝牙适配器.getBondedDevices();
         设备列表.addAll(绑定的设备);
         return 设备列表;
+    }
+
+    /**
+     * 获取已配对设备当前连接状态, 并发送消息
+     * <P>相当于初始化获取设备连接状态的消息, 所以调用前保证程序能收到这些消息</P>
+     * <P>{@link 枚举$接棒消息 }的 "蓝牙连接结果"</P>
+     */
+    public static void 刷新设备当前连接状态() {
+        for (BluetoothDevice 这个设备 : 获取已配对蓝牙设备集()) {
+            boolean 是否已连接的设备 = get蓝牙通信单元管理().获取已连接的设备().indexOf(这个设备) >= 0;
+            /*
+            * 发送消息
+            * */
+            群发信鸽消息(消息创建$设备连接状态改变(这个设备, 是否已连接的设备 ? 枚举$设备连接状态.状态_已连接 : 枚举$设备连接状态.状态_未连接));
+        }
     }
 
     public static boolean 是否扫描中() {
@@ -187,29 +235,41 @@ public class BtManager {
     }
 
     /**
-     * 启用本机蓝牙可检测性，这期间注意广播接收器接收内容
+     * 启用本机蓝牙可检测性，
+     *
+     * @return 是否成功启用可见性
      */
-    public static void 启用本机蓝牙可发现性(Context 上下文) {
-        Intent 意图$可发现性 = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-        意图$可发现性.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 120);
-        上下文.startActivity(意图$可发现性);
+    public boolean 启用本机蓝牙可发现性() {
+        if (上下文 == null) {
+            Toast.makeText(上下文, "发现性启用失败,上下文不可用", Toast.LENGTH_LONG);
+            return false;
+        } else {
+            Intent 意图$可发现性 = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+            意图$可发现性.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 120);
+            上下文.startActivity(意图$可发现性);
+            return true;
+        }
     }
 
     /*
     * 自用的 构建"蓝牙连接结果"消息的方法
     * */
-    private static Message 消息创建$蓝牙连接结果(BluetoothDevice 连接到设备) {
+    private static Message 消息创建$设备连接状态改变(BluetoothDevice 连接到设备, BtManager.枚举$设备连接状态 连接状态) {
         Message 消息 = new Message();
-        int wnat = 枚举$接棒消息.蓝牙连接结果.hashCode();
         消息.what = 枚举$接棒消息.蓝牙连接结果.hashCode();
-        消息.obj = 连接到设备;
+        消息.obj = 连接状态;
+
+        Bundle 绑_设备 = new Bundle();
+        绑_设备.putParcelable(KEY_设备, 连接到设备);
+        消息.setData(绑_设备);
+
         return 消息;
     }
 
     /*
     * 自用的 创建 "通信读写流" 事件的消息
     * */
-    private static Message 创建消息$通信单元读写流(String MAC地址, byte[] 流数据, int 模式_发送0$接收1, int 读到字节数) {
+    private static Message 消息创建$通信单元读写流(String MAC地址, byte[] 流数据, int 模式_发送0$接收1, int 读到字节数) {
         Message 消息 = new Message();
         消息.what = 枚举$接棒消息.通信单元读写流.hashCode();
         消息.arg1 = 模式_发送0$接收1;
@@ -285,7 +345,7 @@ public class BtManager {
                 return false;
             }
             /*
-            * 设备不咋连接队列中,则发起连接
+            * 设备不在连接队列中,则发起连接
             * 先加入映射,再发动线程,保证线程执行完成后能将自己从映射中移除
             * */
             else {
@@ -328,22 +388,42 @@ public class BtManager {
     * */
     public static class 类$蓝牙通信单元管理 {
 
-        HashSet<类$蓝牙通信单元> 集$蓝牙通信单元 = new HashSet<类$蓝牙通信单元>();
+        ArrayMap<String, 类$蓝牙通信单元> 映射_蓝牙通信单元 = new ArrayMap<>();
 
         /*
         * 获取已连接的设备
         * */
-        public List<BluetoothDevice> 获取同已连接的设备() {
+        public List<BluetoothDevice> 获取已连接的设备() {
             List<BluetoothDevice> 通信中的设备 = new ArrayList<>();
-            for (类$蓝牙通信单元 通信单元 : 集$蓝牙通信单元) {
-                通信中的设备.add(通信单元.get蓝牙连接().getRemoteDevice());
+            for (Map.Entry<String, 类$蓝牙通信单元> 这个通信单元映射 : 映射_蓝牙通信单元.entrySet()) {
+                通信中的设备.add(这个通信单元映射.getValue().get蓝牙连接().getRemoteDevice());
             }
             return 通信中的设备;
         }
 
 
-        private void 添加通信单元(BluetoothSocket 蓝牙连接) {
-            集$蓝牙通信单元.add(new 类$蓝牙通信单元(蓝牙连接));
+        /**
+         * 添加通信单元
+         * <P>不能简单添加, 出现重复的话要放弃后来的连接?</P>
+         */
+        private void 添加通信单元(BluetoothSocket 新蓝牙连接) {
+
+            /*
+            * 遍历匹配是否有重复的, 重复则关闭新的, 保留旧的
+            * */
+            if (映射_蓝牙通信单元.containsKey(新蓝牙连接.getRemoteDevice().getAddress())) {
+                try {
+                    新蓝牙连接.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            /*
+            * 是新的设备则加入映射当中
+            * */
+            else {
+                映射_蓝牙通信单元.put(新蓝牙连接.getRemoteDevice().getAddress(), new 类$蓝牙通信单元(新蓝牙连接));
+            }
         }
 
         /**
@@ -352,12 +432,7 @@ public class BtManager {
          * @param Mac地址 根据地址查找通信单元
          */
         public 类$蓝牙通信单元 获取通信单元(String Mac地址) {
-            for (类$蓝牙通信单元 通信单元 : 集$蓝牙通信单元) {
-                if (通信单元.get蓝牙连接().getRemoteDevice().getAddress().equals(Mac地址)) {
-                    return 通信单元;
-                }
-            }
-            return null;
+            return 映射_蓝牙通信单元.get(Mac地址);
         }
 
 
@@ -365,35 +440,34 @@ public class BtManager {
          * 此方法中先关闭各种流和套接字, 然后移除,移除成功后返回 true.
          * 删除连接后, 设备连接状态设为 未连接
          *
-         * @param MAC地址
+         * @return 如果没在映射之中, 则返回 false, 在并移除之后 返回 true
          */
         public boolean 删除通信单元(String MAC地址) {
-            类$蓝牙通信单元 匹配的单元 = null;
-            for (类$蓝牙通信单元 个体单元 : 集$蓝牙通信单元) {
-                if (个体单元.get蓝牙连接().getRemoteDevice().getAddress().equals(MAC地址)) {
-                    匹配的单元 = 个体单元;
-                    break;
-                }
-            }
-            if (匹配的单元 != null) {
-                匹配的单元.关闭蓝牙连接();
-                集$蓝牙通信单元.remove(MAC地址);
+            /*
+            * 存在此映射
+            * */
+            if (映射_蓝牙通信单元.containsKey(MAC地址)) {
+                映射_蓝牙通信单元.get(MAC地址).关闭蓝牙连接();
+                映射_蓝牙通信单元.remove(MAC地址);
                 return true;
-            } else {
-                return false;
             }
+            /*
+            * 不存在此映射
+            * */
+            else return false;
         }
 
         public void 删除所有通信单元() {
-            for (类$蓝牙通信单元 个体单元 : 集$蓝牙通信单元) {
-                个体单元.关闭蓝牙连接();
+            for (Map.Entry<String, 类$蓝牙通信单元> 这个通信单元映射 : 映射_蓝牙通信单元.entrySet()) {
+                这个通信单元映射.getValue().关闭蓝牙连接();
             }
-            集$蓝牙通信单元.clear();
+            映射_蓝牙通信单元.clear();
         }
     }
 
     /*
-    * 成功建立了一个蓝牙连接后,把连接传入这个类中,实现蓝牙通信读写数据*/
+    * 成功建立了一个蓝牙连接后,把连接传入这个类中,实现蓝牙通信读写数据
+    * */
     public static class 类$蓝牙通信单元 {
 
         /*读流线程线程池*/
@@ -404,7 +478,6 @@ public class BtManager {
         private BluetoothSocket 蓝牙连接;
         private InputStream 输入流;
         private OutputStream 输出流;
-        public static final String KEY_消息_读写动作 = "KEY_消息_读写动作";
 
         /**
          * 构造方法, 初始化后面用道的输入输出流
@@ -416,6 +489,10 @@ public class BtManager {
             try {
                 输入流 = 蓝牙连接.getInputStream();
                 输出流 = 蓝牙连接.getOutputStream();
+                /*
+                * 获取流成功后, 自动开始读取数据
+                * */
+                读取流(null);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -427,24 +504,26 @@ public class BtManager {
         class 可执行$读取流 implements Runnable {
 
             private int 缓冲区大小;
+            int 读到字节数;
 
             /*
             * 构造方法:
             * 可定义缓冲区大小
             * */
-            public 可执行$读取流(@Nullable Integer 缓冲区大小) {
+            private 可执行$读取流(@Nullable Integer 缓冲区大小) {
                 this.缓冲区大小 = 缓冲区大小 == null ? 1024 : 缓冲区大小;
             }
 
             @Override
             public void run() {
-                byte[] 接收缓冲区 = new byte[缓冲区大小];
-                int 字节数;
                 while (true) {
+                    byte[] 接收缓冲区 = new byte[缓冲区大小];
                     try {
-                        字节数 = 输入流.read(接收缓冲区);
+                        读到字节数 = 输入流.read(接收缓冲区);
 //                        读完发送消息到 UI 线程
-                        群发信鸽消息(创建消息$通信单元读写流(蓝牙连接.getRemoteDevice().getAddress(), 接收缓冲区, 1, 字节数));
+                        群发信鸽消息(消息创建$通信单元读写流(蓝牙连接.getRemoteDevice().getAddress(), 接收缓冲区, 1, 读到字节数));
+                        /*继续读下一条*/
+                        读取流(null);
                     } catch (IOException e) {
                         e.printStackTrace();
                         break;
@@ -479,16 +558,18 @@ public class BtManager {
                 } finally {
                     if (成功否) {
                         /*发送数据成功后,发送消息*/
-                        群发信鸽消息(创建消息$通信单元读写流(蓝牙连接.getRemoteDevice().getAddress(), 发送缓冲区, 0, 0));
+                        群发信鸽消息(消息创建$通信单元读写流(蓝牙连接.getRemoteDevice().getAddress(), 发送缓冲区, 0, 发送缓冲区.length));
                     }
                 }
             }
 
         }
 
-        /*
-        * 读取数据, 缓冲区大小可定义,默认1024
-        * */
+        /**
+         * 读取数据, 缓冲区大小可定义,默认1024,
+         *
+         * @param 缓冲区大小 null  时为默认 1024
+         */
         public void 读取流(@Nullable Integer 缓冲区大小) {
             /*在线程池中执行*/
             线程池$单线程$读取流.execute(new 可执行$读取流(缓冲区大小));
@@ -510,8 +591,8 @@ public class BtManager {
                 输入流.close();
                 输出流.close();
                 蓝牙连接.close();
-                /*调用接口,设备未连接*/
-                集体回调I_设备连接状态改变事件(蓝牙连接.getRemoteDevice().getAddress(), 枚举$设备连接状态.设备未连接);
+                /*发送消息*/
+                群发信鸽消息(消息创建$设备连接状态改变(蓝牙连接.getRemoteDevice(), 枚举$设备连接状态.动作_已断开));
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -541,20 +622,23 @@ public class BtManager {
 
                 try {
                     临时_蓝牙监听服务 = 蓝牙适配器.listenUsingRfcommWithServiceRecord("蓝牙连接监听", uuid);
-//                        永不超时的等待连接, 但能用 close() 结束这个过程 然后会报错
+                    /*永不超时的等待连接, 但能用 close() 结束这个过程 然后会报错*/
                     临时_蓝牙监听连接 = 临时_蓝牙监听服务.accept(-1);
-//                        上一句不错误才会执行下面的句子
+                    /*上一句不错误才会执行下面的句子*/
                     蓝牙通信单元管理.添加通信单元(临时_蓝牙监听连接);
-//                        成功连接,发送消息给 UI 线程
-                    群发信鸽消息(消息创建$蓝牙连接结果(临时_蓝牙监听连接.getRemoteDevice()));
-                        /*调用接口,设备已连接*/
-                    集体回调I_设备连接状态改变事件(临时_蓝牙监听连接.getRemoteDevice().getAddress(), 枚举$设备连接状态.设备已连接);
+                    /*成功连接,发送消息给 UI 线程*/
+                    群发信鸽消息(消息创建$设备连接状态改变(临时_蓝牙监听连接.getRemoteDevice(), 枚举$设备连接状态.动作_已连接));
+
                         /*如果连续监听则继续,否则停止*/
                     if (!标志_连续监听) {
                         临时_蓝牙监听连接 = null;
                         临时_蓝牙监听服务 = null;
                         break;
                     }
+                    /*
+                    * 监听服务在一个循环之后要关闭,下个循环重新开启
+                    * */
+                    临时_蓝牙监听服务.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                     break;
@@ -597,7 +681,7 @@ public class BtManager {
         * */
         public 线程$发起连接(BluetoothDevice 待连接的蓝牙设备) {
             try {
-                this.蓝牙连接 = 待连接的蓝牙设备.createRfcommSocketToServiceRecord(uuid);
+                this.蓝牙连接 = 待连接的蓝牙设备.createInsecureRfcommSocketToServiceRecord(uuid);
             } catch (IOException e) {
                 e.printStackTrace();
                 this.蓝牙连接 = null;
@@ -612,33 +696,30 @@ public class BtManager {
 
             if (蓝牙连接 != null) {
 
-                String 这个设备地址 = null;
-                try {
-                    这个设备地址 = 蓝牙连接.getRemoteDevice().getAddress();
-                /*调用接口,设备正在连接*/
-                    集体回调I_设备连接状态改变事件(这个设备地址, 枚举$设备连接状态.设备连接中);
+                BluetoothDevice 这个设备 = 蓝牙连接.getRemoteDevice();
 
+                try {
+                    /*发送消息,动作_连接中*/
+                    群发信鸽消息(消息创建$设备连接状态改变(这个设备, 枚举$设备连接状态.动作_连接中));
+
+                    停止扫描蓝牙设备();
+                    /*阻塞,发起连接*/
                     蓝牙连接.connect();
+
                     //只有连接成功才会执行下面这句, 否则直接跳进 catch 里
                     蓝牙通信单元管理.添加通信单元(蓝牙连接);
                     //成功连接,发送消息到UI
-                    群发信鸽消息(消息创建$蓝牙连接结果(蓝牙连接.getRemoteDevice()));
-
-                /*调用接口,设备已连接*/
-                    集体回调I_设备连接状态改变事件(这个设备地址, 枚举$设备连接状态.设备已连接);
+                    群发信鸽消息(消息创建$设备连接状态改变(这个设备, 枚举$设备连接状态.动作_已连接));
 
                 } catch (IOException e) {
                     e.printStackTrace();
                     //失败连接,发送消息到UI
-                    群发信鸽消息(消息创建$蓝牙连接结果(null));
-
-                /*调用接口,设备未连接*/
-                    集体回调I_设备连接状态改变事件(这个设备地址, 枚举$设备连接状态.设备未连接);
+                    群发信鸽消息(消息创建$设备连接状态改变(这个设备, 枚举$设备连接状态.动作_已断开));
 
                 } finally {
                     /*将自己从发起连接的映射中移除*/
-                    if (这个设备地址 != null) {
-                        映射_发起的连接线程.remove(这个设备地址);
+                    if (这个设备 != null) {
+                        映射_发起的连接线程.remove(这个设备.getAddress());
                     }
                 }
             }
@@ -667,38 +748,11 @@ public class BtManager {
         /**
          * 记得同步此方法 synchronized 修饰
          *
-         * @param 目标设备MAC地址 如果设为 null 则回调对所有设备有效
-         * @param 当前状态      当前状态
+         * @param 当前状态或动作 当前状态或动作
          */
-        void on连接状态改变(String 目标设备MAC地址, 枚举$设备连接状态 当前状态);
+        void on连接状态改变(枚举$设备连接状态 当前状态或动作);
     }
 
-    /*
-    * 传入设备连接状态改变的接口实例
-    * 然后在状态改变时调用这个接口
-    * */
-    public static boolean addI_设备连接状态事件(接口$设备连接状态改变 i_设备连接状态事件) {
-        return 集合_接口_设备连接状态改变.add(i_设备连接状态事件);
-    }
-
-    /*
-    * 移除接口-设备连接改变事件
-    * */
-    public static boolean removeI_设备连接状态事件(接口$设备连接状态改变 要移除的接口) {
-        return 集合_接口_设备连接状态改变.remove(要移除的接口);
-    }
-
-    /*
-    * 自用,集体回调, 设备连接状态改变
-    * */
-    private static void 集体回调I_设备连接状态改变事件(String 目标设备MAC地址, 枚举$设备连接状态 当前状态) {
-        for (接口$设备连接状态改变 这个接口 : 集合_接口_设备连接状态改变) {
-            if (这个接口 != null) {
-                这个接口.on连接状态改变(目标设备MAC地址, 当前状态);
-            }
-        }
-
-    }
 
     /*
     * 广播接收器
@@ -737,7 +791,16 @@ public class BtManager {
                             break;
                     }
                     break;
-
+                /*
+                * 检测到硬件层断开连接后, 移除这个蓝牙连接,可导致发送一个连接状态改变消息
+                * */
+                case BluetoothDevice.ACTION_ACL_DISCONNECTED:
+                    /*
+                    * 获取断开连接设备信息
+                    * */
+                    BluetoothDevice 这个设备 = intent.getExtras().getParcelable(BluetoothDevice.EXTRA_DEVICE);
+                    boolean 移除成功 = get蓝牙通信单元管理().删除通信单元(这个设备.getAddress());
+                    Toast.makeText(context, 移除成功 ? "成功移除设备通信单元" : "此设备未连接", Toast.LENGTH_LONG).show();
                 default:
                     break;
             }

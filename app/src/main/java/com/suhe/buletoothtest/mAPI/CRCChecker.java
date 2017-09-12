@@ -57,10 +57,11 @@ public class CRCChecker {
     public static byte[] 发送指令(byte[] 净数据) {
         byte[] 目标字节数组 = new byte[净数据.length + 2];
         char CRC = 生成CRC16校验码(净数据);
-        byte CRC左半 = (byte) (CRC >>> 8);
-        byte CRC右半 = (byte) (CRC & 0xff);
-        目标字节数组[目标字节数组.length - 2] = CRC左半;
-        目标字节数组[目标字节数组.length - 1] = CRC右半;
+        byte CRC高位 = (byte) (CRC >>> 8);
+        byte CRC低位= (byte) (CRC & 0xff);
+        System.arraycopy(净数据,0,目标字节数组,0,净数据.length);
+        目标字节数组[目标字节数组.length - 2] = CRC低位;
+        目标字节数组[目标字节数组.length - 1] = CRC高位;
         return 目标字节数组;
     }
 

@@ -57,19 +57,17 @@ public class CommRecycAdapter extends RecyclerView.Adapter<CommRecycAdapter.View
         final ItemContentOfCommList 这个数据单元 = 数据源_收发指令列表.get(position);
         final ItemContentOfCommList.显示样式 这个样式 = 这个数据单元.这个显示样式;
 
-        SimpleDateFormat 时间格式模板 = new SimpleDateFormat("MM.dd HH-mm-ss");
-        String 样式 = (这个样式 == ItemContentOfCommList.显示样式.正常显示 ? "Norm" : "Hex");
+        SimpleDateFormat 时间格式模板 = new SimpleDateFormat("MM月dd日 HH:mm:ss");
+        String 样式 = (这个样式 == ItemContentOfCommList.显示样式.正常显示 ? "正常" : "十六进制");
         String 格式化时间 = 时间格式模板.format(这个数据单元.时间);
-        String 小标题 = "(" + 样式 + ")" + 格式化时间;
+        String 小标题 = " ( " + 样式 + " ) " + 格式化时间;
         boolean 是否自己 = 这个数据单元.是否自己;
-        holder.文本_小标题.setText(是否自己 ? "ME:" + 小标题 : 小标题);
+        holder.文本_小标题.setText(是否自己 ? "我:" + 小标题 : 小标题);
 
-        if (是否自己) {
-            /*空名称是自己,颜色与标题*/
-            holder.卡片_循环表子项.setBackgroundColor(Color.parseColor("#FF7FC9F4"));
-            holder.文本_小标题.setGravity(Gravity.RIGHT);
-            holder.文本_数据内容.setGravity(Gravity.RIGHT);
-        }
+         /*空名称是自己,颜色与标题*/
+        holder.卡片_循环表子项.setBackgroundColor(Color.parseColor(是否自己 ? "#FFDA9292" : "#FF7FC9F4"));
+        holder.文本_小标题.setGravity(是否自己 ? Gravity.RIGHT : Gravity.LEFT);
+        holder.文本_数据内容.setGravity(是否自己 ? Gravity.RIGHT : Gravity.LEFT);
 
         switch (这个样式) {
             case 十六进制:
@@ -111,12 +109,13 @@ public class CommRecycAdapter extends RecyclerView.Adapter<CommRecycAdapter.View
     }
 
     /*
-    * Holder 里面要保持的对象*/
+        * Holder 里面要保持的对象
+        * */
     public class ViewHolder extends RecyclerView.ViewHolder {
 
-        CardView 卡片_循环表子项;
-        TextView 文本_小标题;
-        TextView 文本_数据内容;
+        private CardView 卡片_循环表子项;
+        private TextView 文本_小标题;
+        private TextView 文本_数据内容;
 
         public ViewHolder(View itemView) {
             super(itemView);

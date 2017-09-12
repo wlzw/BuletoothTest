@@ -1,9 +1,6 @@
 package com.suhe.buletoothtest.Activities;
 
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.Message;
@@ -32,6 +29,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     //        两个碎片
     public DeviceFragment 设备页碎片 = new DeviceFragment();
     public CommFragment 通信页碎片 = new CommFragment();
+    private Object 当前碎片;
 
 
     /*用 MAC 地址映射到 通信记录*/
@@ -148,19 +146,37 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         /*TODO 释放资源,释放 BtManager 里面持有的资源?*/
     }
 
+    /**
+     * 按下返回键时候.
+     * <P>如果当前是通信页, 则切换碎片到设备页</P>
+     * <P>如果当前是设备页, 则执行结束程序释放</P>
+     */
+    @Override
+    public void onBackPressed() {
+        /*如果当前是通信页, 则切换碎片到设备页*/
+        if (当前碎片 == 通信页碎片) {
+            替换碎片(设备页碎片);
+        }
+        /*如果当前是设备页, 则执行原动作*/
+        else super.onBackPressed();
+    }
+
+
     /*
-            * 替换碎片到帧布局
-            * */
+    * 替换碎片到帧布局
+    * */
     private void 替换碎片(Fragment 碎片) {
         /*
-        * every transaction can only be committed one time, then you should create another when needed
+        * 每个碎片事务只能执行一次, 下次要重新创建事务
         * */
         getSupportFragmentManager().beginTransaction().replace(R.id.帧布局_功能碎片容器, 碎片).commit();
+        当前碎片 = 碎片;
         设备页碎片.设置数据源(所有设备, 蓝牙通信单元管理);
         if (碎片 == 设备页碎片) {
             标题.setText("设备页");
         } else {
             标题.setText(当前通信页设备标题);
+
         }
     }
 
@@ -191,7 +207,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         private WeakReference<MainActivity> 弱引用_活动;
 
         类$信鸽(MainActivity 活动) {
-            弱引用_活动 = new WeakReference<MainActivity>(活动);
+            弱引用_活动 = new WeakReference<>(活动);
         }
 
         @Override
@@ -202,20 +218,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             if (活动引用 != null) {
                 /*
                 * 蓝牙连接结果消息
-                * → BtManager 里面自动添加到通信管理中了
                 * → 这里要在通信记录管理中创建一个和这个设备关联的记录表
                 * */
                 if (msg.what == BtManager.枚举$接棒消息.蓝牙连接结果.hashCode()) {
-                    BluetoothDevice 返回的设备 = (BluetoothDevice) msg.obj;
-                    try {
-                        if (返回的设备 != null) {
-                            /*刷新设备表,以更新新连接设备的图标*/
-                            活动引用.设备页碎片.刷新表();
-                            /*创建一个通信记录列表*/
-                            所有设备通信记录.put(返回的设备.getAddress(), new ArrayList<ItemContentOfCommList>());
+                    /*
+                    * 如果是连接成功动作,
+                    * */
+                    if (msg.obj == BtManager.枚举$设备连接状态.动作_已连接) {
+                        BluetoothDevice 这个设备 = msg.getData().getParcelable(BtManager.KEY_设备);
+                        /*
+                        * 如果传来的消息中设备有效,且通信记录中尚没有这个设备, 则添加一个通信记录
+                        * */
+                        if (这个设备 != null && !所有设备通信记录.containsKey(这个设备.getAddress())) {
+                            /*注意!: 重复的添加会替换原值, 不要这样, 会找不到引用的*/
+                            所有设备通信记录.put(这个设备.getAddress(), new ArrayList<ItemContentOfCommList>());
                         }
-                    } catch (Exception e) {
-                        e.printStackTrace();
                     }
 
 //                    TODO 更多消息?
@@ -240,39 +257,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
         }
     }
-
-    /*
-    * 广播接收器
-    * */
-    private BroadcastReceiver 广播接收器 = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            switch (intent.getAction()) {
-                /*
-                * 蓝牙开关状态改变
-                * */
-                case BluetoothAdapter.ACTION_STATE_CHANGED:
-                    switch (intent.getExtras().getInt(BluetoothAdapter.EXTRA_STATE)) {
-                        /*
-                        * 蓝牙已打开
-                        * */
-                        case BluetoothAdapter.STATE_ON:
-                            BtManager.发起临时蓝牙监听(true);
-                            break;
-                        /*
-                        * 蓝牙已关闭,
-                        * */
-                        case BluetoothAdapter.STATE_OFF:
-
-                            break;
-
-                    }
-                    break;
-
-
-            }
-        }
-    };
 
     /*
     * 从外部控制活动标题栏的进度条显隐

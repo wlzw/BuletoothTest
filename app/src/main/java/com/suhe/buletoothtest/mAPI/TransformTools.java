@@ -34,10 +34,10 @@ public class TransformTools {
                 间隔字节数 = 0;
                 break;
             case byte分隔:
-                间隔字节数 = 2;
+                间隔字节数 = 1;
                 break;
             case word分隔:
-                间隔字节数 = 4;
+                间隔字节数 = 2;
                 break;
         }
         StringBuilder 变体字符串 = new StringBuilder();
@@ -144,8 +144,8 @@ public class TransformTools {
     * 检查字符串是否为纯的16进制字符串
     * */
     public static boolean 是否纯十六进制字符串(String 待匹配字符串) {
-        Pattern 正则模板 = Pattern.compile("[ 0-9a-fA-F]");
-        Matcher 匹配器 = 正则模板.matcher(待匹配字符串);
+        Pattern 正则模板 = Pattern.compile("[ 0-9a-fA-F]+");
+        Matcher 匹配器 = 正则模板.matcher(待匹配字符串.subSequence(0, 待匹配字符串.length()));
         return 匹配器.matches();
     }
 
@@ -153,7 +153,7 @@ public class TransformTools {
     * 对输入的字符串进行16进制样式过滤,滤除非16进制样式的字符,保留空格
     * */
     public static CharSequence 过滤为十六进制样式(CharSequence 待过滤字符串) {
-        Pattern 正则模板 = Pattern.compile("[^ 0-9a-fA-F]");
+        Pattern 正则模板 = Pattern.compile("[^ 0-9a-fA-F]+");
         Matcher 匹配器 = 正则模板.matcher(待过滤字符串);
         return 匹配器.replaceAll("");
     }
@@ -169,10 +169,10 @@ public class TransformTools {
     * 添加回车换行结束符?
     * */
     public static byte[] 添加CRLF结束符(byte[] 字节数组) {
-        byte[] 目标字节数组 = new byte[字节数组.length+2];
-        System.arraycopy(字节数组,0,目标字节数组,0,字节数组.length);
-        目标字节数组[目标字节数组.length-2] = 0x0d;
-        目标字节数组[目标字节数组.length-1] = 0x0a;
+        byte[] 目标字节数组 = new byte[字节数组.length + 2];
+        System.arraycopy(字节数组, 0, 目标字节数组, 0, 字节数组.length);
+        目标字节数组[目标字节数组.length - 2] = 0x0d;
+        目标字节数组[目标字节数组.length - 1] = 0x0a;
         return 目标字节数组;
     }
 }

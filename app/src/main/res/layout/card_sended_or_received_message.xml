@@ -4,7 +4,10 @@
     android:id="@+id/卡片_通信页_循环表子项"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="8dp"
+    android:layout_marginBottom="4dp"
+    android:layout_marginLeft="8dp"
+    android:layout_marginRight="8dp"
+    android:layout_marginTop="4dp"
     android:padding="3dp"
     app:cardCornerRadius="4dp"
     app:cardElevation="3dp">
@@ -12,8 +15,8 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="10dp"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:padding="5dp">
 
         <!--名称加时间,注意重心方向与顺序-->
         <TextView
@@ -35,7 +38,7 @@
             android:layout_weight="1"
             android:gravity="right"
             android:hint="发送的指令"
-            android:textSize="15sp" />
+            android:textSize="18sp" />
     </LinearLayout>
 
 </android.support.v7.widget.CardView>

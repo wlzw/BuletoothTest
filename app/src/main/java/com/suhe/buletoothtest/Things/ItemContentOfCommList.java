@@ -16,7 +16,7 @@ import java.util.zip.DataFormatException;
 
 public class ItemContentOfCommList {
 
-    static public enum 显示样式 {
+    public enum 显示样式 {
         正常显示,
         十六进制,
     }
@@ -24,7 +24,7 @@ public class ItemContentOfCommList {
     /*
     * 如果是自己发的,这个职位null
     * */
-    public Boolean 是否自己;
+    public boolean 是否自己;
     /*
     * 内容
     * */
@@ -38,6 +38,9 @@ public class ItemContentOfCommList {
     * */
     public 显示样式 这个显示样式;
 
+    /*
+    * 构造方法
+    * */
     public ItemContentOfCommList(@Nullable boolean 是否自己, Date 生成时间, byte[] 内容, 显示样式 这个显示样式) {
         /*注意:这个可能是 null*/
         this.是否自己 = 是否自己;
