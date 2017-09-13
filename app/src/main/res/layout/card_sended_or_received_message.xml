@@ -26,7 +26,7 @@
             android:layout_gravity="left"
             android:layout_marginBottom="5dp"
             android:hint="2016.12.23 12-12-12"
-            android:textColor="#afafaf"
+            android:textColor="#6e6e6e"
             android:textSize="12sp" />
 
         <!--数据内容,注意重心方向-->

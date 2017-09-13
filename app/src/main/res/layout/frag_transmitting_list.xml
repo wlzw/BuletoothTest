@@ -91,7 +91,6 @@
                 android:layout_height="match_parent"
                 android:layout_gravity="center_horizontal"
                 android:layout_weight="1"
-                android:hint="发送指令"
                 android:inputType="textMultiLine"
                 android:maxLines="2"
                 android:padding="10dp" />

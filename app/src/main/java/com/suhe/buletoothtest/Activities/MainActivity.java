@@ -227,11 +227,28 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     if (msg.obj == BtManager.枚举$设备连接状态.动作_已连接) {
                         BluetoothDevice 这个设备 = msg.getData().getParcelable(BtManager.KEY_设备);
                         /*
-                        * 如果传来的消息中设备有效,且通信记录中尚没有这个设备, 则添加一个通信记录
+                        * 如果设备有效
                         * */
-                        if (这个设备 != null && !所有设备通信记录.containsKey(这个设备.getAddress())) {
+                        if (这个设备 != null) {
+                            /*
+                            * 通信记录中尚没有这个设备, 则添加一个通信记录
+                            * */
+                            if (!所有设备通信记录.containsKey(这个设备.getAddress())) {
                             /*注意!: 重复的添加会替换原值, 不要这样, 会找不到引用的*/
-                            所有设备通信记录.put(这个设备.getAddress(), new ArrayList<ItemContentOfCommList>());
+                                所有设备通信记录.put(这个设备.getAddress(), new ArrayList<ItemContentOfCommList>());
+                            }
+                            /*
+                            * 如果设备列表中没有这个设备, 则添加设备到设备表, 并刷新设备连接状态表状态
+                            * */
+                            boolean 是否新设备 = true;
+                            for (BluetoothDevice 遍历的设备 : 活动引用.所有设备) {
+                                if (遍历的设备.getAddress().equals(这个设备.getAddress())) {
+                                    是否新设备 = false;
+                                }
+                            }
+                            if (是否新设备) {
+                                活动引用.所有设备.add(这个设备);
+                            }
                         }
                     }
 

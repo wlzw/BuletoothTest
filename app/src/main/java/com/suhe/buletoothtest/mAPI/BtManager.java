@@ -37,7 +37,11 @@ import java.util.concurrent.Executors;
 
 public class BtManager {
 
+    /*
+    * 创建实例后才后上下文传入
+    * */
     private Context 上下文;
+
     /*
     * 读写流消息中的流数据键
     * */
@@ -99,7 +103,6 @@ public class BtManager {
     }
 
 
-    private static HashSet<接口$设备连接状态改变> 集合_接口_设备连接状态改变 = new HashSet<>();
     private static final UUID uuid = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     private static BluetoothAdapter 蓝牙适配器 = BluetoothAdapter.getDefaultAdapter();
 
@@ -136,10 +139,11 @@ public class BtManager {
      */
     private static boolean 标志_连续监听 = true;
 
-    /*
-    * 构造方法:
-    * → 注册广播
-    * */
+    /**
+     * 构造方法:
+     * <P>注册广播</P>
+     * <P>注意!: 现在还不知道蓝牙是否开启, 不要做不确定动作</P>
+     */
     public BtManager(Context 上下文) {
         this.上下文 = 上下文;
 
@@ -149,7 +153,7 @@ public class BtManager {
         上下文.registerReceiver(广播接收器, 广播意图_蓝牙开关);
         上下文.registerReceiver(广播接收器, 广播意图_远程设备断开);
 
-        发起临时蓝牙监听(true);
+        发起临时蓝牙监听(标志_连续监听);
     }
 
     /*
@@ -298,25 +302,31 @@ public class BtManager {
      * 发起前先关闭蓝牙连接过程,因为类中的 临时蓝牙连接 只有一个
      * 这里只管发起蓝牙监听,不会收到监听结果
      *
-     * @return "真"表示开始运行线程, "假"表示西安城已经在运行,所以这个方法也可以判断监听是否进行中
+     * @return "真"表示开始运行线程或已经在运行监听线程, "假"表示 蓝牙没开启
      */
     public static boolean 发起临时蓝牙监听(boolean 是否连续监听) {
         /*
-        * 由于监听线程运行的 while 循环中已经有自动连续监听的功能,
-        * 所以只需要改变监听模式,
+        * 蓝牙开启才能监听
         * */
-        BtManager.标志_连续监听 = 是否连续监听;
-        /*
-        * 判断线程是否执行中,如果没有执行则创建并开始
-        * */
-        if (线程_蓝牙监听.isAlive()) {
-            return false;
-        }
-        /*没有在执行则令其执行*/
-        else {
-            线程_蓝牙监听.start();
+        if (蓝牙开启否()) {
+            /*
+            * 由于监听线程运行的 while 循环中已经有自动连续监听的功能,
+            * 所以只需要改变监听模式,
+            * */
+            BtManager.标志_连续监听 = 是否连续监听;
+            /*
+            * 判断线程是否执行中,如果没有执行则创建并开始监听线程
+            * */
+            if (!线程_蓝牙监听.isAlive()) {
+                线程_蓝牙监听 = new 线程$蓝牙连接监听();
+                线程_蓝牙监听.start();
+            }
             return true;
         }
+        /*
+        * 蓝牙没开启不执行
+        * */
+        else return false;
     }
 
     /*
@@ -413,6 +423,9 @@ public class BtManager {
             * */
             if (映射_蓝牙通信单元.containsKey(新蓝牙连接.getRemoteDevice().getAddress())) {
                 try {
+                    新蓝牙连接.getInputStream().close();
+                    ;
+                    新蓝牙连接.getOutputStream().close();
                     新蓝牙连接.close();
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -618,9 +631,12 @@ public class BtManager {
         @Override
         public void run() {
 
-            while (true) {
+            do {
 
                 try {
+                    if (临时_蓝牙监听服务 != null) {
+                        临时_蓝牙监听服务.close();
+                    }
                     临时_蓝牙监听服务 = 蓝牙适配器.listenUsingRfcommWithServiceRecord("蓝牙连接监听", uuid);
                     /*永不超时的等待连接, 但能用 close() 结束这个过程 然后会报错*/
                     临时_蓝牙监听连接 = 临时_蓝牙监听服务.accept(-1);
@@ -629,31 +645,22 @@ public class BtManager {
                     /*成功连接,发送消息给 UI 线程*/
                     群发信鸽消息(消息创建$设备连接状态改变(临时_蓝牙监听连接.getRemoteDevice(), 枚举$设备连接状态.动作_已连接));
 
-                        /*如果连续监听则继续,否则停止*/
-                    if (!标志_连续监听) {
-                        临时_蓝牙监听连接 = null;
-                        临时_蓝牙监听服务 = null;
-                        break;
-                    }
-                    /*
-                    * 监听服务在一个循环之后要关闭,下个循环重新开启
-                    * */
-                    临时_蓝牙监听服务.close();
                 } catch (IOException e) {
                     e.printStackTrace();
+                    /*对于永不超时的监听服务, 如果报错, 则一定是监听服务被关闭, 所以这里不用再关闭了*/
                     break;
                 }
-            }
+            } while (标志_连续监听);
         }
 
         /*
         * 结束监听
         * */
         public void 终止监听() {
-            /*先改标志值*/
-            标志_连续监听 = false;
             try {
-                /*再关闭服务*/
+                /*
+                * 此处关闭服务, 导致监听线程的循环 break, 所以监听线程的 while循环不会再判断监听模式
+                * */
                 临时_蓝牙监听服务.close();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -775,9 +782,10 @@ public class BtManager {
                         * → 判断是否发起监听
                         * */
                         case BluetoothAdapter.STATE_ON:
-                            if (标志_连续监听) {
-                                发起临时蓝牙监听(true);
-                            }
+                            /*
+                            * 如果监听线程没有运行, 则发起监听*/
+                            if (!线程_蓝牙监听.isAlive())
+                                发起临时蓝牙监听(标志_连续监听);
                             break;
                         /*
                         * 蓝牙已关闭
@@ -799,8 +807,13 @@ public class BtManager {
                     * 获取断开连接设备信息
                     * */
                     BluetoothDevice 这个设备 = intent.getExtras().getParcelable(BluetoothDevice.EXTRA_DEVICE);
-                    boolean 移除成功 = get蓝牙通信单元管理().删除通信单元(这个设备.getAddress());
-                    Toast.makeText(context, 移除成功 ? "成功移除设备通信单元" : "此设备未连接", Toast.LENGTH_LONG).show();
+                    if (这个设备 != null) {
+                        String 设备名 = 这个设备.getName();
+                        boolean 移除成功 = get蓝牙通信单元管理().删除通信单元(这个设备.getAddress());
+                        Toast.makeText(context, (移除成功 ? "移除成功" : "已断开") + " : \"" + 设备名 + "\"", Toast.LENGTH_LONG).show();
+                    }
+                    break;
+
                 default:
                     break;
             }

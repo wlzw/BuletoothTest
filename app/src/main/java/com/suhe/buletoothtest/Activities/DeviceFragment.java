@@ -297,7 +297,7 @@ public class DeviceFragment extends Fragment implements View.OnClickListener, De
             /*
             * 如果设备已连接,跳转到通信页
             * */
-           else {
+            else {
                 I_通信记录分配.设置通信页通信记录数据源(点击的设备.getAddress());
             }
 
@@ -311,12 +311,13 @@ public class DeviceFragment extends Fragment implements View.OnClickListener, De
     @Override
     public void on子项长按(BluetoothDevice 点击的设备) {
         final String MAC地址 = 点击的设备.getAddress();
+        final String 设备名 = 点击的设备.getName();
         /*
         * 创建一个对话框, 询问
         * */
         AlertDialog.Builder 对话框创建器_是否断开连接 = new AlertDialog.Builder(this.getContext());
-        对话框创建器_是否断开连接.setTitle("断开连接询问");
-        对话框创建器_是否断开连接.setMessage("Disconnect with \"" + 点击的设备.getName() + "\" ?");
+//        对话框创建器_是否断开连接.setTitle("");
+        对话框创建器_是否断开连接.setMessage("确认断开 \"" + 点击的设备.getName() + "\" ?");
         对话框创建器_是否断开连接.setNegativeButton("取消", null);
         对话框创建器_是否断开连接.setPositiveButton("确认", new DialogInterface.OnClickListener() {
             @Override
@@ -326,7 +327,7 @@ public class DeviceFragment extends Fragment implements View.OnClickListener, De
                 * */
                 if (which == DialogInterface.BUTTON_POSITIVE && MAC地址 != null) {
                     boolean 移除成功 = BtManager.get蓝牙通信单元管理().删除通信单元(MAC地址);
-                    Toast.makeText(getContext(), 移除成功 ? "移除设备成功" : "移除设备失败", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), (移除成功 ? "已移除: " : "未连接: ") + 设备名, Toast.LENGTH_SHORT).show();
                 }
             }
         });

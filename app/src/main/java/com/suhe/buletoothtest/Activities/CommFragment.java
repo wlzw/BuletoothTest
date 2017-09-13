@@ -233,62 +233,71 @@ public class CommFragment extends Fragment implements View.OnClickListener, Comp
                     * */
                     else {
                         /*
-                        * 判断指令样式
+                        * 确保输入框里有内容, 否则不发送
                         * */
-                        switch (当前指令样式) {
-                        /*
-                        * 正常样式
-                        * */
-                            case 正常显示:
-                                当前通信单元.写入流(输入框_发送的指令.getText().toString().getBytes());
-                                break;
-                        /*
-                        * 16进制样式
-                        * */
-                            case 十六进制:
+                        String 输入框的内容 = 输入框_发送的指令.getText().toString();
+                        if (输入框的内容.length() <= 0) {
+                            Toast.makeText(getContext(), "不能为空", Toast.LENGTH_SHORT).show();
+                        } else {
 
-                                /*如果不是纯16进制字符串返回 null*/
-                                byte[] 字节数据_初始 = TransformTools.十六进制字符串to字节数组(输入框_发送的指令.getText().toString());
-                                byte[] 字节数组_修饰后 = null;
-                                if (字节数据_初始 != null) {
+                            /*
+                            * 判断指令样式
+                             * */
+                            switch (当前指令样式) {
                                 /*
-                                * 选中 CRC 或 CRLF ?,需要再处理
+                                * 正常样式
                                 * */
-                                    if (是否启用CRC校验 || 复选框_CRLF结束符.isChecked()) {
-                                    /*
-                                    * 同时选中 CRC 和 CRLF ?
-                                    * */
-                                        if (是否启用CRC校验 && 复选框_CRLF结束符.isChecked()) {
-                                            字节数组_修饰后 = TransformTools.添加CRLF结束符(CRCChecker.发送指令(字节数据_初始));
-                                        }
-                                    /*
-                                    * 只选中二者之一
-                                    * */
-                                        else {
+                                case 正常显示:
+                                    当前通信单元.写入流(输入框_发送的指令.getText().toString().getBytes());
+                                    break;
+                                /*
+                                * 16进制样式
+                                * */
+                                case 十六进制:
+
+                                    /*如果不是纯16进制字符串返回 null*/
+                                    byte[] 字节数据_初始 = TransformTools.十六进制字符串to字节数组(输入框_发送的指令.getText().toString());
+                                    byte[] 字节数组_修饰后 = null;
+                                    if (字节数据_初始 != null) {
                                         /*
-                                        * 只选中 CRC ?
+                                        * 选中 CRC 或 CRLF ?,需要再处理
                                         * */
-                                            if (是否启用CRC校验) {
-                                                字节数组_修饰后 = CRCChecker.发送指令(字节数据_初始);
+                                        if (是否启用CRC校验 || 复选框_CRLF结束符.isChecked()) {
+                                            /*
+                                            * 同时选中 CRC 和 CRLF ?
+                                            * */
+                                            if (是否启用CRC校验 && 复选框_CRLF结束符.isChecked()) {
+                                                字节数组_修饰后 = TransformTools.添加CRLF结束符(CRCChecker.发送指令(字节数据_初始));
                                             }
-                                        /*
-                                        * 只选中 CRLF
-                                        * */
+                                            /*
+                                            * 只选中二者之一
+                                            * */
                                             else {
-                                                字节数组_修饰后 = TransformTools.添加CRLF结束符(字节数据_初始);
+                                                /*
+                                                * 只选中 CRC ?
+                                                * */
+                                                if (是否启用CRC校验) {
+                                                    字节数组_修饰后 = CRCChecker.发送指令(字节数据_初始);
+                                                }
+                                                /*
+                                                * 只选中 CRLF
+                                                * */
+                                                else {
+                                                    字节数组_修饰后 = TransformTools.添加CRLF结束符(字节数据_初始);
+                                                }
                                             }
                                         }
-                                    }
-                                /*
-                                * 都没选中 CRC 和 CRLF,则不修饰
-                                * */
-                                    else {
-                                        字节数组_修饰后 = 字节数据_初始;
-                                    }
+                                        /*
+                                        * 都没选中 CRC 和 CRLF,则不修饰
+                                        * */
+                                        else {
+                                            字节数组_修饰后 = 字节数据_初始;
+                                        }
 
-                                /*经过上面的修饰,最终发送数据*/
-                                    当前通信单元.写入流(字节数组_修饰后);
-                                }
+                                        /*经过上面的修饰,最终发送数据*/
+                                        当前通信单元.写入流(字节数组_修饰后);
+                                    }
+                            }
                         }
                     }
                 }
