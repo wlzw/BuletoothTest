@@ -159,8 +159,15 @@ public class BtManager {
     /*
     * 应用关闭时候释放资源的方法
     * */
-    public static void 释放资源() {
-        /*TODO*/
+    public void 释放资源() {
+        停止扫描蓝牙设备();
+        终止临时蓝牙连接(null);
+        终止临时蓝牙监听();
+        蓝牙通信单元管理.删除所有通信单元();
+        上下文.unregisterReceiver(广播接收器);
+        集$信鸽.clear();
+        蓝牙适配器 =null;
+        上下文 = null;
     }
 
     /*

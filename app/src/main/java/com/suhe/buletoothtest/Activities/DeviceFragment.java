@@ -306,33 +306,46 @@ public class DeviceFragment extends Fragment implements View.OnClickListener, De
 
 
     /*
-    * 长按弹窗询问是否断开连接
+    * 如果设备已连接: 长按弹窗询问是否断开连接
+    * 如果设备未连接: 切换到通信页查看通信记录
     * */
     @Override
     public void on子项长按(BluetoothDevice 点击的设备) {
+
         final String MAC地址 = 点击的设备.getAddress();
         final String 设备名 = 点击的设备.getName();
         /*
-        * 创建一个对话框, 询问
+        * 如果设备已连接: 长按弹窗询问是否断开连接
         * */
-        AlertDialog.Builder 对话框创建器_是否断开连接 = new AlertDialog.Builder(this.getContext());
+        if (BtManager.get蓝牙通信单元管理().获取通信单元(点击的设备.getAddress()) != null) {
+            /*
+            * 创建一个对话框, 询问
+            * */
+            AlertDialog.Builder 对话框创建器_是否断开连接 = new AlertDialog.Builder(this.getContext());
 //        对话框创建器_是否断开连接.setTitle("");
-        对话框创建器_是否断开连接.setMessage("确认断开 \"" + 点击的设备.getName() + "\" ?");
-        对话框创建器_是否断开连接.setNegativeButton("取消", null);
-        对话框创建器_是否断开连接.setPositiveButton("确认", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
+            对话框创建器_是否断开连接.setMessage("确认断开 \"" + 点击的设备.getName() + "\" ?");
+            对话框创建器_是否断开连接.setNegativeButton("取消", null);
+            对话框创建器_是否断开连接.setPositiveButton("确认", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
                 /*
                 * 确认键, 执行断开设备
                 * */
-                if (which == DialogInterface.BUTTON_POSITIVE && MAC地址 != null) {
-                    boolean 移除成功 = BtManager.get蓝牙通信单元管理().删除通信单元(MAC地址);
-                    Toast.makeText(getContext(), (移除成功 ? "已移除: " : "未连接: ") + 设备名, Toast.LENGTH_SHORT).show();
+                    if (which == DialogInterface.BUTTON_POSITIVE && MAC地址 != null) {
+                        boolean 移除成功 = BtManager.get蓝牙通信单元管理().删除通信单元(MAC地址);
+                        Toast.makeText(getContext(), (移除成功 ? "已移除: " : "未连接: ") + 设备名, Toast.LENGTH_SHORT).show();
+                    }
                 }
-            }
-        });
+            });
 
-        对话框创建器_是否断开连接.create();
-        对话框创建器_是否断开连接.show();
+            对话框创建器_是否断开连接.create();
+            对话框创建器_是否断开连接.show();
+        }
+        /*
+        * 如果设备未连接: 切换到通信页查看通信记录
+        * */
+        else {
+            I_通信记录分配.设置通信页通信记录数据源(点击的设备.getAddress());
+        }
     }
 }

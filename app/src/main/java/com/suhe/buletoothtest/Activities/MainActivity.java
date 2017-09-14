@@ -39,7 +39,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public List<BluetoothDevice> 所有设备 = new ArrayList<>();
     private 类$信鸽 信鸽 = new 类$信鸽(this);
 
-
+    BtManager 蓝牙总管;
     BtManager.类$蓝牙通信单元管理 蓝牙通信单元管理 = BtManager.get蓝牙通信单元管理();
 
 
@@ -60,7 +60,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setContentView(R.layout.activity_main);
 
             /*创建实例后增加拉暖管理的自动化处理,例如对广播作出反应*/
-        BtManager 蓝牙总管 = new BtManager(this);
+        蓝牙总管 = new BtManager(this);
 //        换页按钮
         Button btn_设备页 = (Button) findViewById(R.id.btn_设备页);
         btn_设备页.setOnClickListener(this);
@@ -96,6 +96,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             public boolean 设置通信页通信记录数据源(String MAC地址) {
 
                 当前通信页_MAC地址 = MAC地址;
+                通信页碎片.设置数据源(当前通信页_MAC地址, 映射_所有设备通信记录.get(当前通信页_MAC地址), 映射_设备与数据修饰规则.get(当前通信页_MAC地址));
 
                 if (映射_所有设备通信记录.get(MAC地址) != null) {
 
@@ -107,18 +108,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         }
                     }
 
-                    /*
-                    * 注意:*/
-                    通信页碎片.设置数据源(当前通信页_MAC地址, 映射_所有设备通信记录.get(当前通信页_MAC地址), 映射_设备与数据修饰规则.get(当前通信页_MAC地址));
                     替换碎片(通信页碎片);
-
                     return true;
                 }
                 /*
                 * 如果通信记录里没有这个设备的, 提示
                 * */
                 else {
-                    Toast.makeText(getBaseContext(), "这个设备未连接?", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getBaseContext(), "选择的设备没有通信记录", Toast.LENGTH_SHORT).show();
                     return false;
                 }
             }
@@ -165,8 +162,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (当前碎片 == 通信页碎片) {
             替换碎片(设备页碎片);
         }
-        /*如果当前是设备页, 则执行原动作*/
-        else super.onBackPressed();
+        /*如果当前是设备页, 则执行释放资源动作*/
+        else {
+            映射_所有设备通信记录.clear();
+            映射_设备与数据修饰规则.clear();
+            所有设备.clear();
+            蓝牙通信单元管理 = null;
+            getSupportFragmentManager().beginTransaction().detach((Fragment) 当前碎片);
+            蓝牙总管.释放资源();
+            super.onBackPressed();
+            finish();
+            /*终极资源释放方法, 进程自杀! */
+            android.os.Process.killProcess(android.os.Process.myPid());
+        }
+
+
     }
 
 
