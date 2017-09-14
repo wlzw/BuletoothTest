@@ -1,13 +1,8 @@
 package com.suhe.buletoothtest.Things;
 
 import android.support.annotation.Nullable;
-import android.text.format.Time;
 
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.Timer;
-import java.util.zip.DataFormatException;
 
 /**
  * Created by Administrator on 2017/9/4.
@@ -16,11 +11,10 @@ import java.util.zip.DataFormatException;
 
 public class ItemContentOfCommList {
 
-    public enum 显示样式 {
-        正常显示,
-        十六进制,
-    }
-
+    /*
+    * 是否使用 GBK 中文编码的数据
+    * */
+    public boolean 是否GBK编码;
     /*
     * 如果是自己发的,这个职位null
     * */
@@ -36,16 +30,17 @@ public class ItemContentOfCommList {
     /*
     * 显示为正常样式还是16进制
     * */
-    public 显示样式 这个显示样式;
+    public boolean 是否Hex显示;
 
     /*
     * 构造方法
     * */
-    public ItemContentOfCommList(@Nullable boolean 是否自己, Date 生成时间, byte[] 内容, 显示样式 这个显示样式) {
+    public ItemContentOfCommList(boolean 是否自己, boolean 是否Hex显示, boolean 是否GBK编码, Date 生成时间, byte[] 内容) {
         /*注意:这个可能是 null*/
         this.是否自己 = 是否自己;
+        this.是否GBK编码 = 是否GBK编码;
         this.时间 = 生成时间;
         this.内容 = 内容;
-        this.这个显示样式 = 这个显示样式;
+        this.是否Hex显示 = 是否Hex显示;
     }
 }

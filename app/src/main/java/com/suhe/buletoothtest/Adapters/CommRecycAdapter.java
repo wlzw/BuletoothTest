@@ -13,6 +13,7 @@ import com.suhe.buletoothtest.R;
 import com.suhe.buletoothtest.Things.ItemContentOfCommList;
 import com.suhe.buletoothtest.mAPI.TransformTools;
 
+import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
 import java.util.List;
 
@@ -26,7 +27,12 @@ public class CommRecycAdapter extends RecyclerView.Adapter<CommRecycAdapter.View
     /*
     * 接口,子项长按事件
     * */
-    接口$长按事件$通信页循环表子项 长按事件_循环表子项;
+    private 接口$长按事件$通信页循环表子项 长按事件_循环表子项;
+    /*
+    * 接口, 子项双击事件
+    * */
+    private 接口$双击事件$通信页循环表子项 双击事件_循环表子项;
+
     /*
     * 列表数据源
     * */
@@ -53,44 +59,90 @@ public class CommRecycAdapter extends RecyclerView.Adapter<CommRecycAdapter.View
     * 特定位置的数据赋值给子项控件
     * */
     @Override
-    public void onBindViewHolder(ViewHolder holder, int position) {
+    public void onBindViewHolder(final ViewHolder holder, int position) {
         final ItemContentOfCommList 这个数据单元 = 数据源_收发指令列表.get(position);
-        final ItemContentOfCommList.显示样式 这个样式 = 这个数据单元.这个显示样式;
 
         SimpleDateFormat 时间格式模板 = new SimpleDateFormat("MM月dd日 HH:mm:ss");
-        String 样式 = (这个样式 == ItemContentOfCommList.显示样式.正常显示 ? "正常" : "十六进制");
+        String 样式 = 这个数据单元.是否Hex显示 ? "十六进制" : "正常";
+        String 编码 = 这个数据单元.是否GBK编码 ? "GBK" : "UTF";
         String 格式化时间 = 时间格式模板.format(这个数据单元.时间);
-        String 小标题 = " ( " + 样式 + " ) " + 格式化时间;
-        boolean 是否自己 = 这个数据单元.是否自己;
-        holder.文本_小标题.setText(是否自己 ? "我:" + 小标题 : 小标题);
+        String 小标题 = " ( " + 样式 + " " + 编码 + " )  " + 格式化时间;
 
-         /*空名称是自己,颜色与标题*/
+        boolean 是否自己 = 这个数据单元.是否自己;
+        boolean 是否Hex显示 = 这个数据单元.是否Hex显示;
+        boolean 是否GBK编码 = 这个数据单元.是否GBK编码;
+
+        holder.文本_小标题.setText(是否自己 ? "我 :" + 小标题 : 小标题);
         holder.卡片_循环表子项.setBackgroundColor(Color.parseColor(是否自己 ? "#FFDA9292" : "#FF7FC9F4"));
         holder.文本_小标题.setGravity(是否自己 ? Gravity.RIGHT : Gravity.LEFT);
         holder.文本_数据内容.setGravity(是否自己 ? Gravity.RIGHT : Gravity.LEFT);
 
-        switch (这个样式) {
-            case 十六进制:
-                holder.文本_数据内容.setText(TransformTools.字节数组to十六进制字符串(这个数据单元.内容, TransformTools.十六进制字符串样式.word分隔));
-                break;
-            case 正常显示:
-                holder.文本_数据内容.setText(new String(这个数据单元.内容));
-                break;
+        /*
+        * 先判断是否 Hex 显示样式,
+        * */
+        if (是否Hex显示) {
+            holder.文本_数据内容.setText(TransformTools.字节数组to十六进制字符串(这个数据单元.内容, TransformTools.十六进制字符串样式.word分隔));
+        }
+        /*
+        * 如果是 正常样式,
+        * */
+        else {
+            try {
+                holder.文本_数据内容.setText(new String(这个数据单元.内容, 是否GBK编码 ? "GBK" : "utf-8"));
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
         }
 
         final int 子项索引 = position;
+
+        /*
+        * 设置和判断调用双击事件
+        * */
+        holder.卡片_循环表子项.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                /*
+                * 如果前一个状态是 已触发双击, 则这次点击将其还原为 未触发状态, 且不判断双击操作
+                * */
+                if (holder.是否触发了双击) {
+                    holder.是否触发了双击 = false;
+                    holder.点击时间截 = System.currentTimeMillis();
+                }
+                /*
+                * 如果上一个状态没有触发双击操作, 则这次来判断,
+                * 如果两次电极之间时间间隔小于 0.4 秒, 则认为是双击操作,
+                * 调用双击事件接口
+                * */
+                else {
+                    /*
+                    * 判断两次点击之间是否符合双击
+                    * */
+                    if ((System.currentTimeMillis() - holder.点击时间截) < 400) {
+                        /*切换编码*/
+                        这个数据单元.是否Hex显示 = !这个数据单元.是否Hex显示;
+
+                        if (双击事件_循环表子项 != null) {
+                            双击事件_循环表子项.on子项双击(子项索引);
+                        }
+
+                        holder.是否触发了双击 = true;
+                    }
+                    /*别忘了更新时间截*/
+                    holder.点击时间截 = System.currentTimeMillis();
+                }
+            }
+        });
+
+        /*
+        * 设置和调用长按事件
+        * */
         holder.卡片_循环表子项.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
                 /*切换样式*/
-                switch (这个样式) {
-                    case 十六进制:
-                        这个数据单元.这个显示样式 = ItemContentOfCommList.显示样式.正常显示;
-                        break;
-                    case 正常显示:
-                        这个数据单元.这个显示样式 = ItemContentOfCommList.显示样式.十六进制;
-                        break;
-                }
+                这个数据单元.是否GBK编码 = !这个数据单元.是否GBK编码;
+
                 /*修改了子项数据属性后,触发事件将子项索引回调*/
                 if (长按事件_循环表子项 != null) {
                     长按事件_循环表子项.on子项长按(子项索引);
@@ -116,9 +168,13 @@ public class CommRecycAdapter extends RecyclerView.Adapter<CommRecycAdapter.View
         private CardView 卡片_循环表子项;
         private TextView 文本_小标题;
         private TextView 文本_数据内容;
+        private boolean 是否触发了双击;
+        private long 点击时间截;
 
         public ViewHolder(View itemView) {
             super(itemView);
+            是否触发了双击 = false;
+            点击时间截 = System.currentTimeMillis();
             卡片_循环表子项 = (CardView) itemView.findViewById(R.id.卡片_通信页_循环表子项);
             文本_小标题 = (TextView) itemView.findViewById(R.id.文本_收发指令小标题);
             文本_数据内容 = (TextView) itemView.findViewById(R.id.文本_收发指令内容);
@@ -137,5 +193,19 @@ public class CommRecycAdapter extends RecyclerView.Adapter<CommRecycAdapter.View
     * */
     public void setOn长按循环表子项(接口$长按事件$通信页循环表子项 事件) {
         this.长按事件_循环表子项 = 事件;
+    }
+
+    /*
+    * 双击子项返回点击项索引
+    * */
+    public interface 接口$双击事件$通信页循环表子项 {
+        void on子项双击(int 项索引);
+    }
+
+    /*
+    * 设置双击事件
+    * */
+    public void setOn双击循环表子项(接口$双击事件$通信页循环表子项 事件) {
+        this.双击事件_循环表子项 = 事件;
     }
 }

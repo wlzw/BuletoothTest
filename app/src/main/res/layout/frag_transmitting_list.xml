@@ -37,7 +37,7 @@
                 android:text="Hex" />
 
             <Space
-                android:layout_width="10dp"
+                android:layout_width="5dp"
                 android:layout_height="match_parent" />
 
             <!--CRC切换-->
@@ -48,7 +48,7 @@
                 android:text="CRC" />
 
             <Space
-                android:layout_width="10dp"
+                android:layout_width="5dp"
                 android:layout_height="match_parent" />
 
             <!--CRLF切换-->
@@ -59,8 +59,15 @@
                 android:text="CRLF" />
 
             <Space
-                android:layout_width="10dp"
+                android:layout_width="5dp"
                 android:layout_height="match_parent" />
+
+            <!--GBK编码流-->
+            <CheckBox
+                android:id="@+id/复选框_GBK编码"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:text="GBK" />
 
             <LinearLayout
                 android:layout_width="match_parent"

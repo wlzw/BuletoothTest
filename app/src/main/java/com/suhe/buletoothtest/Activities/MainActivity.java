@@ -31,11 +31,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public CommFragment 通信页碎片 = new CommFragment();
     private Object 当前碎片;
 
-
     /*用 MAC 地址映射到 通信记录*/
-    public static SimpleArrayMap<String, List<ItemContentOfCommList>> 所有设备通信记录 = new SimpleArrayMap<>();
+    public static SimpleArrayMap<String, List<ItemContentOfCommList>> 映射_所有设备通信记录 = new SimpleArrayMap<>();
+    /* 每个设备 对应自己的数据收发配置*/
+    public static SimpleArrayMap<String, CommFragment.类$数据搜发修饰规则> 映射_设备与数据修饰规则 = new SimpleArrayMap<>();
 
-    private List<BluetoothDevice> 所有设备 = new ArrayList<>();
+    public List<BluetoothDevice> 所有设备 = new ArrayList<>();
     private 类$信鸽 信鸽 = new 类$信鸽(this);
 
 
@@ -47,7 +48,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public ProgressBar 圆进度条;
 
     /*当前通信页设备名称标题*/
-    private String 当前通信页设备标题 = "";
+    private String 当前通信页_设备标题;
+    private String 当前通信页_MAC地址;
 
     /*
     * onCreate 重写
@@ -86,30 +88,36 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         });
 
         设备页碎片.setI_通信记录分配(new 接口$通信记录分配() {
-            /*
-            * 设置数据源,并套转到通信页
-            * */
+            /**
+             * 设置数据源,并跳转到通信页,
+             * 不论是否已连接, 只要有通信记录即可切换页.
+             * */
             @Override
             public boolean 设置通信页通信记录数据源(String MAC地址) {
-                /*查找通信记录集合,设置数据源,切换到通信页,切换标题*/
-                List<ItemContentOfCommList> 匹配的通信记录 = 所有设备通信记录.get(MAC地址);
-                if (匹配的通信记录 != null) {
-                    boolean 标志_匹配到 = false;
+
+                当前通信页_MAC地址 = MAC地址;
+
+                if (映射_所有设备通信记录.get(MAC地址) != null) {
+
+                    /*用 MAC 找到这个设备的名称, 显示在标题栏上*/
                     for (BluetoothDevice 这个设备 : 所有设备) {
                         if (这个设备.getAddress().equals(MAC地址)) {
-                            当前通信页设备标题 = 这个设备.getName();
-                            标志_匹配到 = true;
+                            当前通信页_设备标题 = 这个设备.getName();
                             break;
                         }
                     }
-                    if (!标志_匹配到) {
-                        当前通信页设备标题 = "(没找着?什么鬼?)";
-                    }
-                    通信页碎片.设置数据源(MAC地址, 匹配的通信记录);
-                    /*替换碎片时,标题自动就换了*/
+
+                    /*
+                    * 注意:*/
+                    通信页碎片.设置数据源(当前通信页_MAC地址, 映射_所有设备通信记录.get(当前通信页_MAC地址), 映射_设备与数据修饰规则.get(当前通信页_MAC地址));
                     替换碎片(通信页碎片);
+
                     return true;
-                } else {
+                }
+                /*
+                * 如果通信记录里没有这个设备的, 提示
+                * */
+                else {
                     Toast.makeText(getBaseContext(), "这个设备未连接?", Toast.LENGTH_SHORT).show();
                     return false;
                 }
@@ -171,12 +179,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         * */
         getSupportFragmentManager().beginTransaction().replace(R.id.帧布局_功能碎片容器, 碎片).commit();
         当前碎片 = 碎片;
-        设备页碎片.设置数据源(所有设备, 蓝牙通信单元管理);
         if (碎片 == 设备页碎片) {
             标题.setText("设备页");
+            设备页碎片.设置数据源(所有设备, 蓝牙通信单元管理);
         } else {
-            标题.setText(当前通信页设备标题);
-
+            标题.setText(当前通信页_设备标题);
         }
     }
 
@@ -233,9 +240,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             /*
                             * 通信记录中尚没有这个设备, 则添加一个通信记录
                             * */
-                            if (!所有设备通信记录.containsKey(这个设备.getAddress())) {
-                            /*注意!: 重复的添加会替换原值, 不要这样, 会找不到引用的*/
-                                所有设备通信记录.put(这个设备.getAddress(), new ArrayList<ItemContentOfCommList>());
+                            if (!映射_所有设备通信记录.containsKey(这个设备.getAddress())) {
+                            /*注意!: 重复的添加会替换原值, 不要那样, 否则会找不到引用的*/
+                                映射_所有设备通信记录.put(这个设备.getAddress(), new ArrayList<ItemContentOfCommList>());
+                                /*同时添加一个数据修饰规则*/
+                                映射_设备与数据修饰规则.put(这个设备.getAddress(), new CommFragment.类$数据搜发修饰规则());
                             }
                             /*
                             * 如果设备列表中没有这个设备, 则添加设备到设备表, 并刷新设备连接状态表状态
